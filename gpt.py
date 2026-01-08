@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
+from data_loader_files import total_text_data, complete_text_data, validation_data
 
 if torch.backends.mps.is_available():
     device = torch.device("mps")
@@ -11,74 +12,44 @@ elif torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-BLOCK_SIZE = 512
+BLOCK_SIZE = 768
 
-with open('input.txt', 'r') as file:
-    shake_sp_data = file.read()
-with open('grimms.txt', 'r') as file:
-    grimms_data = file.read()
-with open('sherlock.txt', 'r') as file:
-    sherlocks_data = file.read()
-with open('dracula.txt', 'r') as file:
-    dracula_data = file.read()
+token_encoder = tiktoken.encoding_for_model("gpt-3.5")
+total_set = set(token_encoder.encode(complete_text_data)) | set(token_encoder.encode(total_text_data)) | set(token_encoder.encode(validation_data))
+vocab_tokens = sorted(list(total_set))
+ttoi = {t:i for i,t in enumerate(vocab_tokens)}
+itot = {i:t for i,t in enumerate(vocab_tokens)}
 
-token_encoder = tiktoken.encoding_for_model("gpt-4o")
+def token_to_index(token):
+    return ttoi[token]
 
-total_text_data = f"""
-Poems:-
+def index_to_token(index):
+    return itot[index]
 
-{shake_sp_data}
+def encode(content):
+    token_ids = token_encoder.encode(content)
+    return list(map(token_to_index, token_ids))
 
-
-END of Poems
-
-{" "*BLOCK_SIZE}
-
-New Content:-
-
-stories:-
-
-{grimms_data}
-
-END of Stories
-
-{" "*BLOCK_SIZE}
-
-New Content:-
-
-Sherlocks stories:-
-
-{sherlocks_data}
-
-End of Sherlocks stories.
-
-{" "*BLOCK_SIZE}
-
-New Content:-
-
-Dracula Stories:-
-
-{dracula_data}
-
-"""
+def decode(indices):
+    token_ids = list(map(index_to_token, indices))
+    return token_encoder.decode(token_ids)
 
 # global satic values
 data_length = len(total_text_data)
-train_split = int(data_length * 0.97)
-train_total_tokens = token_encoder.encode(total_text_data[:train_split])
+train_total_tokens = encode(total_text_data)
 train_total_tokens_tensor = torch.tensor(train_total_tokens)
-val_total_tokens = token_encoder.encode(total_text_data[train_split:])
+val_total_tokens = encode(validation_data)
 val_total_tokens_tensor = torch.tensor(val_total_tokens)
-vocab_tokens = sorted(list(set(token_encoder.encode(total_text_data))))
-VOCAB_SIZE = token_encoder.n_vocab
-EMBED_SIZE = 256
+VOCAB_SIZE = len(vocab_tokens)
+print(VOCAB_SIZE, train_total_tokens_tensor.max(), val_total_tokens_tensor.max())
+EMBED_SIZE = 384
 BATCH_SIZE = 32
-NUM_HEADS = 4
+NUM_HEADS = 6
 assert EMBED_SIZE % NUM_HEADS == 0
 HEAD_SIZE = EMBED_SIZE//NUM_HEADS
-DECODER_LAYERS = 2
+DECODER_LAYERS = 8
 DROPOUT = 0.2
-ITER = 2000
+ITER = 5000
 
 
 class FeedForward(nn.Module):
@@ -96,67 +67,44 @@ class FeedForward(nn.Module):
         return out
 
 
-class Head(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.key = nn.Linear(EMBED_SIZE, HEAD_SIZE, bias=False)
-        self.query = nn.Linear(EMBED_SIZE, HEAD_SIZE, bias=False)
-        self.value = nn.Linear(EMBED_SIZE, HEAD_SIZE, bias=False)
-        
-        self.register_buffer('tril', torch.tril(torch.ones(BLOCK_SIZE, BLOCK_SIZE, dtype=torch.float, device=device)))
-    
-    def forward(self, input_embeddings):
-        B, T, C = input_embeddings.shape
-        q = self.query(input_embeddings)
-        k = self.key(input_embeddings)
-        similarity = q @ k.transpose(-2, -1)/(HEAD_SIZE**0.5)
-        wei = similarity.masked_fill(self.tril[:T, :T]==0.0, value=float('-inf'))
-        wei = F.softmax(wei, dim=-1)
-        v = self.value(input_embeddings)
-        out = wei @ v
-        return out
-
-
-class MultiHeadAttentionCausal(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.heads = nn.ModuleList([Head() for _ in range(NUM_HEADS)])
-        self.WH = nn.Linear(EMBED_SIZE, EMBED_SIZE)
-        self.dropout = nn.Dropout(DROPOUT)
-    
-    def forward(self, inputs):
-        out = torch.cat([head(inputs) for head in self.heads], dim=-1)
-        out = self.WH(out)
-        out = self.dropout(out)
-        return out
     
 class SelfAttentionDecoder(nn.Module):
     def __init__(self):
+        super().__init__()
         self.key = nn.Linear(EMBED_SIZE, EMBED_SIZE, bias=False)
         self.query = nn.Linear(EMBED_SIZE, EMBED_SIZE, bias=False)
         self.value = nn.Linear(EMBED_SIZE, EMBED_SIZE, bias=False)
-        self.register_buffer('tril', torch.tril(torch.ones(BLOCK_SIZE, BLOCK_SIZE)))
+        self.linear_layer = nn.Linear(EMBED_SIZE, EMBED_SIZE)
+        self.register_buffer('tril', torch.tril(torch.ones(BLOCK_SIZE, BLOCK_SIZE, device=device, dtype=torch.float)))
+        self.dropout = nn.Dropout(DROPOUT)
     
     def forward(self, input_embddings):
         B, T, C = input_embddings.shape
         q = self.query(input_embddings).reshape(B, T, NUM_HEADS, HEAD_SIZE).transpose(1, 2) # B, NUM_HEADS, T, HEAD_SIZE
         k = self.key(input_embddings).reshape(B, T, NUM_HEADS, HEAD_SIZE).transpose(1, 2) # B, NUM_HEADS, T, HEAD_SIZE
         v = self.value(input_embddings).reshape(B, T, NUM_HEADS, HEAD_SIZE).transpose(1, 2) # B, NUM_HEADS, T, HEAD_SIZE
-        qk = q @ k.transpose(-2, -1)
+        qk = q @ k.transpose(-2, -1) # B, NUM_HEADS, T, T
         qk *= HEAD_SIZE ** -0.5
+        attns = qk.masked_fill(self.tril[:T, :T]==0.0, value=float('-inf'))
+        attns = F.softmax(attns, dim=-1)
+        attns = attns @ v # B, NUM_HEADS, T, HEAD_SIZE
+        attns = attns.transpose(1, 2).contiguous().view(B, T, C)
+        out = self.linear_layer(attns)
+        out = self.dropout(out)
+        return out
         
     
 
 class DecoderBlock(nn.Module):
     def __init__(self):
         super().__init__()
-        self.mhc_attention = MultiHeadAttentionCausal()
+        self.self_attention_decoder = SelfAttentionDecoder()
         self.ff_layer = FeedForward()
         self.ln1 = nn.LayerNorm(EMBED_SIZE)
         self.ln2 = nn.LayerNorm(EMBED_SIZE)
     
     def forward(self, input_embeddings):
-        input_embeddings = input_embeddings + self.mhc_attention(self.ln1(input_embeddings))
+        input_embeddings = input_embeddings + self.self_attention_decoder(self.ln1(input_embeddings))
         input_embeddings = input_embeddings + self.ff_layer(self.ln2(input_embeddings))
         return input_embeddings
 
@@ -169,6 +117,7 @@ class LLM(nn.Module):
         self.decoder_blocks = nn.Sequential(*[DecoderBlock() for _ in range(DECODER_LAYERS)])
         self.ln_final = nn.LayerNorm(EMBED_SIZE)
         self.layer = nn.Linear(EMBED_SIZE, VOCAB_SIZE)
+        self.embeddings.weight = self.layer.weight
     
     def forward(self, inputs, targets=None):
         B, T = inputs.shape
@@ -208,10 +157,20 @@ def get_batch(split="train"):
     yb = torch.stack([target_token[i+1: i+BLOCK_SIZE+1] for i in ix]).to(device)
     return xb, yb
 
-# test_head = torch.randn((BATCH_SIZE, BLOCK_SIZE, EMBED_SIZE))
-# head = Head()
-# out = head(test_head)
-# print(out.shape)
+@torch.no_grad()
+def estimate_loss():
+    out = {}
+    model.eval()
+    for split in ['train', 'val']:
+        losses = torch.zeros(200) # Average over 200 batches
+        for k in range(200):
+            X, Y = get_batch(split)
+            logits, loss = model(X, Y)
+            losses[k] = loss.item()
+        out[split] = losses.mean()
+    model.train()
+    return out
+
 
 if __name__ == "__main__":
     model = LLM()
@@ -220,28 +179,35 @@ if __name__ == "__main__":
     model.train()
     stepi = []
     lossi = []
+    valii = []
     for step in range(ITER):
         xb, yb = get_batch()
         model.zero_grad(set_to_none=True)
         logits, loss = model(xb, yb)
         if step%50 ==0:
-            print(f"Step {step}: Loss {loss.item():.4f}")
+            loss_check = estimate_loss()
+            print(f"Step {step}: Train Loss {loss_check['train']:.4f}, Val Loss {loss_check['val']:.4f}")
             stepi.append(step)
-            lossi.append(loss.item())
+            lossi.append(loss_check['train'])
+            valii.append(loss_check['val'])
         loss.backward()
         optimizer.step()
     torch.save(model, "model.pth")
     print(loss.item())
     
-    plt.plot(stepi, lossi)
-    plt.title("Training Loss")
-    plt.xlabel("Step (x50)")
+    plt.figure(figsize=(10, 6))
+    plt.plot(stepi, lossi, label='Train Loss')
+    plt.plot(stepi, valii, label='Validation Loss')
+    plt.title("Training vs Validation Loss")
+    plt.xlabel("Steps")
     plt.ylabel("Loss")
+    plt.legend() 
+    plt.grid(True)
     plt.savefig('loss_curve.png')
     print("Loss curve saved to loss_curve.png")
         
     torch.manual_seed(37)
-    test_data = torch.tensor([token_encoder.encode("Once upon a time:- ")], device=device)
+    test_data = torch.tensor([encode("Once upon a time:- ")], device=device)
     gen_data_tensors = model.generate(test_data)
-    gen_data = [token_encoder.decode(x.tolist()) for x in gen_data_tensors]
+    gen_data = [decode(x.tolist()) for x in gen_data_tensors]
     print(gen_data[0])

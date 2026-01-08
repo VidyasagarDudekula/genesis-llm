@@ -1,0 +1,49 @@
+nohup: ignoring input
+Step 0: Train Loss 12.3704, Val Loss 12.3669
+Step 50: Train Loss 7.2628, Val Loss 7.6394
+Step 100: Train Loss 6.9165, Val Loss 7.3837
+Step 150: Train Loss 6.7117, Val Loss 7.2253
+Step 200: Train Loss 6.4554, Val Loss 6.9910
+Step 250: Train Loss 6.2020, Val Loss 6.8255
+Step 300: Train Loss 5.9957, Val Loss 6.6482
+Step 350: Train Loss 5.8141, Val Loss 6.5096
+Step 400: Train Loss 5.6709, Val Loss 6.4314
+Step 450: Train Loss 5.5436, Val Loss 6.3612
+Step 500: Train Loss 5.4453, Val Loss 6.2688
+Step 550: Train Loss 5.3513, Val Loss 6.2265
+Step 600: Train Loss 5.2865, Val Loss 6.1887
+Step 650: Train Loss 5.2140, Val Loss 6.1459
+Step 700: Train Loss 5.1610, Val Loss 6.1091
+Step 750: Train Loss 5.0902, Val Loss 6.0754
+Step 800: Train Loss 5.0514, Val Loss 6.0389
+Step 850: Train Loss 5.0017, Val Loss 5.9984
+Step 900: Train Loss 4.9657, Val Loss 5.9689
+Step 950: Train Loss 4.9227, Val Loss 5.9680
+Step 1000: Train Loss 4.8807, Val Loss 5.9555
+Step 1050: Train Loss 4.8477, Val Loss 5.9396
+Step 1100: Train Loss 4.8139, Val Loss 5.9706
+Step 1150: Train Loss 4.7903, Val Loss 5.9217
+Step 1200: Train Loss 4.7578, Val Loss 5.9088
+Step 1250: Train Loss 4.7241, Val Loss 5.9071
+Step 1300: Train Loss 4.6979, Val Loss 5.8870
+Step 1350: Train Loss 4.6829, Val Loss 5.8901
+Step 1400: Train Loss 4.6524, Val Loss 5.8938
+Step 1450: Train Loss 4.6285, Val Loss 5.9036
+Step 1500: Train Loss 4.6028, Val Loss 5.8633
+Step 1550: Train Loss 4.5806, Val Loss 5.8862
+Step 1600: Train Loss 4.5652, Val Loss 5.8579
+Step 1650: Train Loss 4.5314, Val Loss 5.8486
+Step 1700: Train Loss 4.5192, Val Loss 5.8684
+Step 1750: Train Loss 4.4955, Val Loss 5.8650
+Step 1800: Train Loss 4.4752, Val Loss 5.8659
+Step 1850: Train Loss 4.4577, Val Loss 5.8917
+Step 1900: Train Loss 4.4391, Val Loss 5.8646
+Step 1950: Train Loss 4.4284, Val Loss 5.8906
+4.324777603149414
+Loss curve saved to loss_curve.png
+Once upon a time:-  My hair, and thoughtful— Very young with a little income from the neck off. I
+stro mole to be too lossness into the midst of human with red coffin night uncovered yearning in the door was sharp upon the diamond morning about a man who knew. Then special канц were playing along his moustely. She similar near Hors down again, and that sun
+so
+that was a policeman
+place by a small neighbouringthe horses to one of the seaelessly
+kiss her, the chair

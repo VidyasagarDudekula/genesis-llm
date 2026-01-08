@@ -1,0 +1,29 @@
+nohup: ignoring input
+32963 tensor(32962) tensor(32962)
+Step 0: Train Loss 10.5537, Val Loss 10.5508
+Step 50: Train Loss 7.0608, Val Loss 7.0775
+Step 100: Train Loss 7.0427, Val Loss 7.0781
+Step 150: Train Loss 7.0438, Val Loss 7.0891
+Step 200: Train Loss 7.0311, Val Loss 7.0557
+Step 250: Train Loss 7.0331, Val Loss 7.0858
+Step 300: Train Loss 7.0291, Val Loss 7.0772
+Step 350: Train Loss 7.0349, Val Loss 7.0719
+Step 400: Train Loss 7.0339, Val Loss 7.0814
+Step 450: Train Loss 7.0404, Val Loss 7.0901
+Step 500: Train Loss 7.0318, Val Loss 7.0942
+Step 550: Train Loss 7.0278, Val Loss 7.0908
+Step 600: Train Loss 7.0273, Val Loss 7.0709
+Step 650: Train Loss 6.9719, Val Loss 7.0174
+Step 700: Train Loss 6.8481, Val Loss 6.8858
+Step 750: Train Loss 6.7199, Val Loss 6.7646
+Step 800: Train Loss 6.6153, Val Loss 6.6554
+Step 850: Train Loss 6.5230, Val Loss 6.5737
+Step 900: Train Loss 6.4663, Val Loss 6.5107
+Step 950: Train Loss 6.3838, Val Loss 6.4444
+Step 1000: Train Loss 6.3076, Val Loss 6.3664
+Step 1050: Train Loss 6.2220, Val Loss 6.2776
+Step 1100: Train Loss 6.1941, Val Loss 6.2441
+Step 1150: Train Loss 6.1056, Val Loss 6.1699
+Step 1200: Train Loss 6.0864, Val Loss 6.1677
+Step 1250: Train Loss 6.0138, Val Loss 6.0899
+Step 1300: Train Loss 6.0111, Val Loss 6.0951
